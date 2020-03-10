@@ -355,7 +355,7 @@ void Lcd_Init(void)
     while(--t); // ~1mS
     Komut_Gon(0xAF);    // LCD On komutu
 
-  //  GPIO_ResetBits(Lcd_BL_Port, Lcd_BL_Pin);        //  Backlight aktif
+    //  GPIO_ResetBits(Lcd_BL_Port, Lcd_BL_Pin);        //  Backlight aktif
 
     Lcd_Clear(Alt_Ekran_1Satir, Ust_Ekran_Baslangic, Alt_Ekran_Bitis); // 0xB0 page adresini temizle (Ust Ekran + Alt Ekran 1. Satýr)
     Lcd_Clear(Alt_Ekran_2Satir, Alt_Ekran_Baslangic, Alt_Ekran_Bitis); // 0xB1 page adresini temizle

@@ -27,29 +27,24 @@
 #include "stdio.h"
 
 char Buff[32];
-uint8_t DHT_Buffer[5];
-bool Ayar_Modu;
-bool Reset_Atildi;
-float  Sht_Isi;
-float  Sht_Nem;
-float  Set;
-float  P;
-float  I;
-float  D;
-uint16_t Olculen_Isi;
-uint16_t RTC_Saniye;
+bool Setting_Mode = false;
+
+uint32_t RTC_Second = 0;
 uint8_t RTC_Saat;
 uint8_t RTC_Gun;
 uint8_t Dimmer;  // 0-100
 
-#define Integral_Carpani 0.01
-#define Band_Genisligi  0.5 // derece
+#define I_BACKUP_ADR 0
+#define COEFFICIENT 0.01
+#define BANDRANGE  0.5 // derece
+
 /*-----------------------------------------------------------*/
 #define Ms(c)   pdMS_TO_TICKS(c)
 /*-----------------------------------------------------------*/
-volatile xSemaphoreHandle xMutex;
+volatile xSemaphoreHandle xMeasureSemaphore;
+volatile xSemaphoreHandle xMutex_Display;
 volatile xSemaphoreHandle xEncoderSemaphore;
-volatile xSemaphoreHandle xButonSemaphore;
+volatile xSemaphoreHandle xButonSemaphore = {0};
 volatile xSemaphoreHandle xBuzzerSemaphore;
 volatile xSemaphoreHandle xRTCSemaphore;
 volatile xQueueHandle xQueue;
@@ -57,7 +52,6 @@ volatile xTimerHandle BL_Timer;
 
 static void vTask_Encoder(void *pvParameters);
 static void vTask_Sensor(void *pvParameters);
-static void vTask_Backlight(void *pvParameters);
 static void vBL_Timer(xTimerHandle xTimer);
 static void vTask_Buton(void *pvParameters);
 static void vTask_Buzzer(void *pvParameters);
@@ -70,22 +64,33 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName);
 void vApplicationTickHook(void);
 void vAssertCalled(unsigned long ulLine, const char *const pcFileName);
 /***************************************************************************************************************************/
-void DelayMs(uint32_t t)
+void Set_Float_Backup(uint8_t adr, float *reg)
 {
-    t *= 177; // ms/1mhz
-    while(t--)
-    {
-        __NOP();
-        __NOP();
-    }
+    uint8_t *ptr = (uint8_t *)reg;
+    uint32_t temp;
+    temp = *ptr++;
+    temp |= *ptr++ << 8;
+    temp |= *ptr++ << 16;
+    temp |= *ptr++ << 24;
+    RTC_WriteBackupRegister(adr, temp);
 }
 /***************************************************************************************************************************/
-void DelayS(uint8_t t)
+float Get_Float_Backup(uint8_t adr)
 {
-    while(t--)
-    {
-        DelayMs(1000);
-    }
+    float temp_f;
+    uint8_t *ptr = (uint8_t *)&temp_f;
+    uint32_t temp = RTC_ReadBackupRegister(adr);
+    *ptr++ = temp;
+    *ptr++ = temp >> 8;
+    *ptr++ = temp >> 16;
+    *ptr++ = temp >> 24;
+    return temp_f;
+}
+/***************************************************************************************************************************/
+void Backlight_Active(void)
+{
+    Gpio_Low(Lcd_BL_Port, Lcd_BL_Pin);
+    xTimerStart(BL_Timer, portMAX_DELAY);
 }
 /***************************************************************************************************************************/
 /***************************************************************************************************************************/
@@ -94,35 +99,23 @@ int main(void)
 {
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
     IWDG_SetPrescaler(IWDG_Prescaler_256);
-    IWDG_SetReload(0x0150); // 3sn sonra yeniden yüklenmezse wdt reset atacak
+    IWDG_SetReload(0x0250); // 6sn sonra yeniden yüklenmezse wdt reset atacak
     IWDG_ReloadCounter();
     IWDG_Enable();
-		Reset_Atildi=FALSE;
-	  if(RCC_GetFlagStatus(RCC_FLAG_IWDGRST) != RESET)
+
+    if(RCC_GetFlagStatus(RCC_FLAG_IWDGRST) != RESET)
     {
-			Reset_Atildi=TRUE;
-		}
+        Set_Float_Backup(I_BACKUP_ADR, 0);
+    }
     disableInterrupts();
 
     HW_Setup();
 
     Lcd_Pin_Init();
     Lcd_Init();
-		
-	  if(Reset_Atildi!=TRUE)
-    {
-			Gpio_Low(Lcd_BL_Port, Lcd_BL_Pin);
-			Lcd_Underline_Str(Alt1, 0, "COSKUN ERGAN");
-			Lcd_Invert_Str(Alt2, 0,    "ISI-NEM V1.3");
-			IWDG_ReloadCounter();
-			DelayS(2);
-			IWDG_ReloadCounter();
-		}
-			
-		Lcd_Str(Alt1, 0, "ISI:     AYAR");
-		Lcd_Str(Alt2, 0, "NEM: %       ");
 
-    xMutex = xSemaphoreCreateMutex(); // Mutex -> LCD
+    xMutex_Display = xSemaphoreCreateMutex(); // Mutex -> LCD
+    vSemaphoreCreateBinary(xMeasureSemaphore);      // RTC interrupt semaphore
     vSemaphoreCreateBinary(xEncoderSemaphore);    // encoder interrupt semaphore
     vSemaphoreCreateBinary(xButonSemaphore);      // buton interrupt semaphore
     vSemaphoreCreateBinary(xBuzzerSemaphore);      // Buzzer interrupt semaphore
@@ -131,12 +124,11 @@ int main(void)
     BL_Timer = xTimerCreate("BL Timer", Ms(5000), pdTRUE, NULL, vBL_Timer);   // backlight timer
 
     /* Start the two tasks as described at the top of this file. */
-    xTaskCreate(vTask_Sensor ,  "Task Sensor" , 700, NULL, 1, NULL);
-    xTaskCreate(vTask_Encoder,  "Taks Encoder", 700, NULL, 1, NULL);
-    xTaskCreate(vTask_Backlight, "Taks Backlight", 700, NULL, 1, NULL);
-    xTaskCreate(vTask_Buton, "Taks Buton", 700, NULL, 1, NULL);
-    xTaskCreate(vTask_Buzzer, "Buzzer", 700, NULL, 1, NULL);
-    xTaskCreate(vTask_RTC, "RTC", 700, NULL, 1, NULL);
+    xTaskCreate(vTask_Sensor ,  "Task Sensor" , 512, NULL, 9, NULL);
+    xTaskCreate(vTask_Encoder,  "Taks Encoder", 512, NULL, 5, NULL);
+    xTaskCreate(vTask_Buton, "Taks Buton", 512, NULL, 5, NULL);
+    xTaskCreate(vTask_Buzzer, "Buzzer", 256, NULL, 15, NULL);
+    xTaskCreate(vTask_RTC, "RTC", 256, NULL, 6, NULL);
 
     Int_Eeprom_ReadStr(0, (uint8_t *)Buff, 2); // Eeprom Hafizadan AYAR degerini okunur
     Encoder_Value = Buff[0];
@@ -144,9 +136,7 @@ int main(void)
 
     Int_Eeprom_ReadStr(2, (uint8_t *)&RTC_Saat, 1); // Eeprom Hafizadan saat degerini okunur
     Int_Eeprom_ReadStr(3, (uint8_t *)&RTC_Gun,  1); // Eeprom Hafizadan Gün  degerini okunur
-    Int_Eeprom_ReadStr(4, (uint8_t *)&I, 4);
-		Ayar_Modu = TRUE;
-		
+
     vTaskStartScheduler();
 
     for(;;);
@@ -154,27 +144,34 @@ int main(void)
 }
 /***************************************************************************************************************************/
 /***************************************************************************************************************************/
-/***************************************************************************************************************************/
+/**************************************************************************************************************************/
 static void vTask_Sensor(void *pvParameters)
 {
+		float Temperature;
+		float Humidity;
+		float Set;	
+    float I = Get_Float_Backup(I_BACKUP_ADR);
+
+    xSemaphoreTake(xMeasureSemaphore, portMAX_DELAY);
+
     for(;;)
     {
-        vTaskDelay(Ms(500));
+        xSemaphoreTake(xMeasureSemaphore, portMAX_DELAY);
 
-        if(!SHT11_Oku(&Sht_Isi, &Sht_Nem))
+        if(!SHT11_Oku(&Temperature, &Humidity))
         {
-            if((Sht_Isi > 99) | (Sht_Isi < (-10)) | (Sht_Nem > 99)) // hatali ölçüm var
+            if((Temperature > 99) || (Temperature < (-10)) || (Humidity > 99)) // hatali ölçüm var
             {
                 continue;// yanlis isi alindi checksum yanlis olma ihtimali var
             }
             Set = (float)(Encoder_Value * 0.1);
 
-            if(Set <= Sht_Isi - Band_Genisligi)
+            if(Set <= Temperature - BANDRANGE)
             {
                 Dimmer = 0;
                 I = 0;
             }
-            else if(Set >= Sht_Isi + Band_Genisligi)
+            else if(Set >= Temperature + BANDRANGE)
             {
                 Dimmer = 99;
                 I = 0;
@@ -182,8 +179,9 @@ static void vTask_Sensor(void *pvParameters)
             else
             {
                 //--------- PI calculate ---------
-                I += (float)(Set - Sht_Isi); // hata payi
-                Set = (float)((Set + Band_Genisligi) - Sht_Isi + (I * Integral_Carpani));
+                I += (float)(Set - Temperature); // hata payi
+                Set_Float_Backup(I_BACKUP_ADR, &I);
+                Set = (float)((Set + BANDRANGE) - Temperature + (I * COEFFICIENT));
                 if(Set < 0)
                 {
                     Dimmer = 0;
@@ -199,27 +197,31 @@ static void vTask_Sensor(void *pvParameters)
                 }
             }
 
-            xSemaphoreTake(xMutex, portMAX_DELAY);
-            sprintf(Buff, "%02.1f", Sht_Isi);
+            xSemaphoreTake(xMutex_Display, portMAX_DELAY);
+            sprintf(Buff, "%02.1f", Temperature);
             Lcd_Str(Alt1, 4, Buff);
-            sprintf(Buff, "%2.0f", Sht_Nem);
+            sprintf(Buff, "%2.0f", Humidity);
             Lcd_Str(Alt2, 6, Buff);
             sprintf(Buff, "%02d", Dimmer);
             Lcd_Str(Ust, 0, Buff);
-            xSemaphoreGive(xMutex);
+            xSemaphoreGive(xMutex_Display);
             IWDG_ReloadCounter();
         }
-        else if(!DHT11_Oku(&Sht_Isi, &Sht_Nem))
+        else if(!DHT11_Oku(&Temperature, &Humidity))
         {
+            if((Temperature > 99) || (Temperature < (-10)) || (Humidity > 99)) // hatali ölçüm var
+            {
+                continue;// yanlis isi alindi checksum yanlis olma ihtimali var
+            }
 
             Set = (float)(Encoder_Value * 0.1);
 
-            if(Set <= Sht_Isi - Band_Genisligi)
+            if(Set <= Temperature - BANDRANGE)
             {
                 Dimmer = 0;
                 I = 0;
             }
-            else if(Set >= Sht_Isi + Band_Genisligi)
+            else if(Set >= Temperature + BANDRANGE)
             {
                 Dimmer = 99;
                 I = 0;
@@ -227,8 +229,9 @@ static void vTask_Sensor(void *pvParameters)
             else
             {
                 //--------- PI calculate ---------
-                I += (float)(Set - Sht_Isi); // hata payi
-                Set = (float)((Set + Band_Genisligi) - Sht_Isi + (I * Integral_Carpani));
+                I += (float)(Set - Temperature); // hata payi
+                Set_Float_Backup(I_BACKUP_ADR, &I);
+                Set = (float)((Set + BANDRANGE) - Temperature + (I * COEFFICIENT));
                 Dimmer = (uint8_t)(Set * 100);
                 //---------- Result -------------
                 if(Dimmer > 99)
@@ -236,23 +239,23 @@ static void vTask_Sensor(void *pvParameters)
                     Dimmer = 99;
                 }
             }
-            xSemaphoreTake(xMutex, portMAX_DELAY);
-            sprintf(Buff, "%02.1f", Sht_Isi);
+            xSemaphoreTake(xMutex_Display, portMAX_DELAY);
+            sprintf(Buff, "%02.1f", Temperature);
             Lcd_Str(Alt1, 4, Buff);
-            sprintf(Buff, "%2.0f", Sht_Nem);
+            sprintf(Buff, "%2.0f", Humidity);
             Lcd_Str(Alt2, 6, Buff);
             sprintf(Buff, "%02d", Dimmer);
             Lcd_Str(Ust, 0, Buff);
-            xSemaphoreGive(xMutex);
+            xSemaphoreGive(xMutex_Display);
             IWDG_ReloadCounter();
         }
         else
         {
-            xSemaphoreTake(xMutex, portMAX_DELAY);
+            xSemaphoreTake(xMutex_Display, portMAX_DELAY);
             Dimmer = 50;
             Lcd_Str(Alt1, 4, "XX.X"); // sensor yok
             Lcd_Str(Alt2, 6, "XX");
-            xSemaphoreGive(xMutex);
+            xSemaphoreGive(xMutex_Display);
         }
     }
 }
@@ -261,46 +264,22 @@ static void vTask_Sensor(void *pvParameters)
 /***************************************************************************************************************************/
 static void vTask_Encoder(void *pvParameters)
 {
+    xSemaphoreTake(xEncoderSemaphore, portMAX_DELAY);
+
     for(;;)
     {
         xSemaphoreTake(xEncoderSemaphore, portMAX_DELAY);
-			
-				if(Reset_Atildi==TRUE)			
-				{
-					continue;
-				}
 
-        xSemaphoreTake(xMutex, portMAX_DELAY);
-        if(Ayar_Modu == TRUE)
+        Backlight_Active();
+
+        if(Setting_Mode == true)
         {
+            xSemaphoreTake(xMutex_Display, portMAX_DELAY);
             Lcd_Underline_Str(Alt1, 9, "AYAR");
             sprintf(Buff, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
             Lcd_Invert_Str(Alt2, 9, Buff);
+            xSemaphoreGive(xMutex_Display);
         }
-        else
-        {
-            Lcd_Str(Alt1, 9, "AYAR");
-            sprintf(Buff, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
-            Lcd_Str(Alt2, 9, Buff);
-        }
-        xSemaphoreGive(xMutex);
-    }
-}
-/***************************************************************************************************************************/
-/***************************************************************************************************************************/
-/***************************************************************************************************************************/
-static void vTask_Backlight(void *pvParameters)
-{
-    for(;;)
-    {
-        xSemaphoreTake(xEncoderSemaphore, portMAX_DELAY);
-			  if(Reset_Atildi==TRUE)
-				{
-					continue;
-				}			
-        Gpio_Low(Lcd_BL_Port, Lcd_BL_Pin);
-
-        xTimerStart(BL_Timer, portMAX_DELAY);
     }
 }
 /***************************************************************************************************************************/
@@ -308,41 +287,42 @@ static void vTask_Backlight(void *pvParameters)
 /***************************************************************************************************************************/
 static void vTask_Buton(void *pvParameters)
 {
+    xSemaphoreTake(xButonSemaphore, portMAX_DELAY);
+
     for(;;)
     {
         xSemaphoreTake(xButonSemaphore, portMAX_DELAY);
-			
-        vTaskDelay(Ms(50));
 
-			  if(Reset_Atildi==FALSE)
-				{					
-					Gpio_Low(Lcd_BL_Port, Lcd_BL_Pin);
-				}
+        Backlight_Active();
 
-        xTimerStart(BL_Timer, portMAX_DELAY);
+        vTaskDelay(Ms(50));// debounce
 
-        Ayar_Modu = !Ayar_Modu;
+        Setting_Mode = !Setting_Mode;
 
-        xSemaphoreTake(xMutex, portMAX_DELAY);
-        if(Ayar_Modu == TRUE)
+        xSemaphoreTake(xMutex_Display, portMAX_DELAY);
+
+        if(Setting_Mode == true)
         {
             TIM_Cmd(Encoder_Timer, ENABLE);
+            Lcd_Str(Alt1, 0, "ISI:     AYAR");
+            Lcd_Str(Alt2, 0, "NEM: %       ");
             Lcd_Underline_Str(Alt1, 9, "AYAR");
             sprintf(Buff, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
             Lcd_Invert_Str(Alt2, 9, Buff);
         }
         else
         {
-            taskENTER_CRITICAL();
-            Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
-            taskEXIT_CRITICAL();
             TIM_Cmd(Encoder_Timer, DISABLE);
             Lcd_Str(Alt1, 9, "AYAR");
             sprintf(Buff, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
             Lcd_Str(Alt2, 9, Buff);
+            taskENTER_CRITICAL();
+            Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
+            taskEXIT_CRITICAL();
         }
 
-        xSemaphoreGive(xMutex);
+        xSemaphoreGive(xMutex_Display);
+
         xSemaphoreGive(xBuzzerSemaphore);
     }
 }
@@ -354,37 +334,21 @@ void vBL_Timer(xTimerHandle xTimer)
     Gpio_High(Lcd_BL_Port, Lcd_BL_Pin);
 
     xTimerStop(BL_Timer, portMAX_DELAY);
-    Ayar_Modu = FALSE;
+
     TIM_Cmd(Encoder_Timer, DISABLE);
 
-    if(!Gpio_Get(ButonB_Port, ButonB_Pin)) // 5n uzun basilmis ise
-    {
-        RTC_Saat = 0;
-        RTC_Gun = 0;
-        RTC_Saniye = 0;
-        taskENTER_CRITICAL();
-        Int_Eeprom_WriteStr(2, (uint8_t *)&RTC_Saat, 1);
-        Int_Eeprom_WriteStr(3, (uint8_t *)&RTC_Gun, 1);
-        taskEXIT_CRITICAL();
-        xSemaphoreGive(xBuzzerSemaphore);
-        xSemaphoreGive(xRTCSemaphore);
-    }
-    else
-    {
-        if(Ayar_Modu == TRUE)
-        {
-            taskENTER_CRITICAL();
-            Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
-            taskEXIT_CRITICAL();
-        }
-        xSemaphoreGive(xEncoderSemaphore);
-    }
+    taskENTER_CRITICAL();
+    Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
+    taskEXIT_CRITICAL();
+
+    Setting_Mode = false;
 }
 /***************************************************************************************************************************/
 /***************************************************************************************************************************/
 /***************************************************************************************************************************/
 static void vTask_RTC(void *pvParameters)
 {
+    uint8_t Button_counter = 0;
     /* Remove compiler warning about unused parameter. */
     (void) pvParameters;
 
@@ -392,31 +356,61 @@ static void vTask_RTC(void *pvParameters)
     {
         xSemaphoreTake(xRTCSemaphore, portMAX_DELAY);  // 1sn RTC Wkup tick
 
-        RTC_Saniye++;
-        if(RTC_Saniye == 2) // reset at1ld1ktan 2 sn sonra temziler ki ses c1kmas1n isik yanmasin 
-        {			
-				Reset_Atildi=FALSE;
-				}
-
-        if(RTC_Saniye >= 3600)
+        switch(RTC_Second++)
         {
-            RTC_Saniye = 0;
-            RTC_Saat++;
-            if(RTC_Saat >= 24)
-            {
-                RTC_Saat = 0;
-                RTC_Gun++;
-            }
-            taskENTER_CRITICAL();
-            Int_Eeprom_WriteStr(2, (uint8_t *)&RTC_Saat, 1);
-            Int_Eeprom_WriteStr(3, (uint8_t *)&RTC_Gun, 1);
-            Int_Eeprom_WriteStr(4, (uint8_t *)&I, 4); // 4-5-6-7 fload veri
-            while(1);	// saatlik reset					
+            case 0:
+                Backlight_Active();
+                xSemaphoreTake(xMutex_Display, portMAX_DELAY);
+                Lcd_Underline_Str(Alt1, 0, "COSKUN ERGAN");
+                Lcd_Invert_Str(Alt2, 0,    "ISI-NEM V1.4");
+                sprintf(Buff, "::%0.2d%0.2d", RTC_Gun, RTC_Saat);
+                Display_String_Yaz(Buff);
+                xSemaphoreGive(xMutex_Display);
+                break;
+            case 1:
+                break;
+            case 2:
+                xSemaphoreTake(xMutex_Display, portMAX_DELAY);
+                Lcd_Str(Alt1, 0, "ISI:     AYAR");
+                Lcd_Str(Alt2, 0, "NEM: %       ");
+                sprintf(Buff, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
+                Lcd_Str(Alt2, 9, Buff);
+                xSemaphoreGive(xMutex_Display);
+                xSemaphoreGive(xEncoderSemaphore);
+                xSemaphoreGive(xMeasureSemaphore);
+                break;
+//            case 3600: // safety reset
+//                RTC_Second = 0;
+//                RTC_Saat++;
+//                if(RTC_Saat >= 24)
+//                {
+//                    RTC_Saat = 0;
+//                    RTC_Gun++;
+//                }
+//                taskENTER_CRITICAL();
+//                Int_Eeprom_WriteStr(2, (uint8_t *)&RTC_Saat, 1);
+//                Int_Eeprom_WriteStr(3, (uint8_t *)&RTC_Gun, 1);
+//                Int_Eeprom_WriteStr(4, (uint8_t *)&I, 4); // 4-5-6-7 fload veri
+//                while(1);	// saatlik reset
+            default:
+                xSemaphoreGive(xMeasureSemaphore);
+                if(!Gpio_Get(ButonB_Port, ButonB_Pin) && (Button_counter++ > 5)) // long press sense
+                {
+                    RTC_Saat = 0;
+                    RTC_Gun = 0;
+                    RTC_Second = 0;
+                    taskENTER_CRITICAL();
+                    Int_Eeprom_WriteStr(2, (uint8_t *)&RTC_Saat, 1);
+                    Int_Eeprom_WriteStr(3, (uint8_t *)&RTC_Gun, 1);
+                    taskEXIT_CRITICAL();
+                    xSemaphoreGive(xBuzzerSemaphore);
+                }
+                else
+                {
+                    Button_counter = 0;
+                }
+                break;
         }
-        xSemaphoreTake(xMutex, portMAX_DELAY);
-        sprintf(Buff, "::%0.2d%0.2d", RTC_Gun, RTC_Saat);
-        Display_String_Yaz(Buff);
-        xSemaphoreGive(xMutex);
     }
 }
 /***************************************************************************************************************************/
@@ -429,14 +423,13 @@ static void vTask_Buzzer(void *pvParameters)
 
     for(;;)
     {
-				xSemaphoreTake(xBuzzerSemaphore, portMAX_DELAY);
-			  if(Reset_Atildi==TRUE)
-				{
-					continue;
-				}			
         Gpio_Low(Buzzer_Port, Buzzer_Pin);
-        vTaskDelay(Ms(50));
+
+        xSemaphoreTake(xBuzzerSemaphore, Ms(50));
+
         Gpio_High(Buzzer_Port, Buzzer_Pin);
+
+        xSemaphoreTake(xBuzzerSemaphore, portMAX_DELAY);
     }
 }
 /***************************************************************************************************************************/

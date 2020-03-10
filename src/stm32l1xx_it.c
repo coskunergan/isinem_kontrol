@@ -79,7 +79,6 @@ void Dimmer_Timer_IRQHandler(void)  // dimmer timer overflow int
     __NOP();
     __NOP();
     __NOP();
-	  __NOP();
     __NOP();
     __NOP();
     __NOP();
@@ -88,10 +87,11 @@ void Dimmer_Timer_IRQHandler(void)  // dimmer timer overflow int
     __NOP();
     __NOP();
     __NOP();
-    __NOP(); 
     __NOP();
     __NOP();
-    __NOP(); // Pulse MOC2030 20us	
+    __NOP();
+    __NOP();
+    __NOP(); // Pulse MOC2030 20us
     Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
 }
 /******************************************************************************/
@@ -106,7 +106,7 @@ void Zero_Cross_IRQHandler(void) // zero cross detect interrupt
     if(Dimmer == 99)// full ise tamamen ac
     {
         Gpio_High(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
-    }		
+    }
 }
 /******************************************************************************/
 void HardFault_Handler_C(unsigned long *hardfault_args)

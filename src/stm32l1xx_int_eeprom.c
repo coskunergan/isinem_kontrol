@@ -21,8 +21,8 @@ void Int_Eeprom_ReadStr(uint32_t Addr, uint8_t *buff_data, uint8_t len)  // eepr
     uint32_t  Addr_End = Addr + len + DATA_EEPROM_START_ADDR;
 
     Addr += DATA_EEPROM_START_ADDR;
-    disableInterrupts();
-    DATA_EEPROM_Unlock();
+//    disableInterrupts();
+//    DATA_EEPROM_Unlock();
 
     while(Addr < Addr_End)
     {
@@ -32,8 +32,8 @@ void Int_Eeprom_ReadStr(uint32_t Addr, uint8_t *buff_data, uint8_t len)  // eepr
         Addr = Addr + 1;
     }
 
-    DATA_EEPROM_Lock();
-    enableInterrupts();
+//    DATA_EEPROM_Lock();
+//    enableInterrupts();
 }
 /**************************************************************************************/
 void Int_Eeprom_WriteStr(uint32_t Addr, uint8_t *buff_data, uint8_t len) // eeprom adresindeki dizinin üzerine yazar

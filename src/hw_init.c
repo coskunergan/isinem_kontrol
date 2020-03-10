@@ -22,7 +22,7 @@ void HW_Setup(void)
     EXTI_InitTypeDef EXTI_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    bool LSI_Enable = FALSE;
+    bool LSI_Enable = false;
     uint32_t Timeout_LSE = 20000;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
@@ -49,7 +49,7 @@ void HW_Setup(void)
         RCC_LSICmd(ENABLE);
         while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET) {}
         RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
-        LSI_Enable = TRUE;
+        LSI_Enable = true;
     }
     else
     {
@@ -66,7 +66,7 @@ void HW_Setup(void)
     /* RTC Wakeup Interrupt Generation: Clock Source: RTCDiv_16  */
     RTC_WakeUpClockConfig(RTC_WakeUpClock_RTCCLK_Div16);
 
-    if(LSI_Enable == TRUE)
+    if(LSI_Enable == true)
     {
         /***LSI kristal degerleri***/
 // 0xE9   = 100ms
@@ -209,7 +209,7 @@ void HW_Setup(void)
 //////////////////// High Level Pins /////////////////////////
     Gpio_High(Buzzer_Port, Buzzer_Pin);
     Gpio_High(FM_Enb_Port, FM_Enb_Pin);
-		Gpio_High(Lcd_BL_Port, Lcd_BL_Pin);
+    Gpio_High(Lcd_BL_Port, Lcd_BL_Pin);
     Gpio_High(STH11_Vcc_Port, STH11_Vcc_Pin);
     Gpio_High(STH11_Sda_Port, STH11_Sda_Pin);
     Gpio_High(STH11_Scl_Port, STH11_Scl_Pin);
@@ -282,7 +282,7 @@ void HW_Setup(void)
 //////////////////////// DIMMER TIMER INIT //////////////////////////
     RCC_APB1PeriphClockCmd(Dimmer_Timer_Clk, ENABLE);
 
-    TIM_TimeBaseStructure.TIM_Prescaler =85;  // frekans periyot aral1klar1 zamanlamay1 uzat1r
+    TIM_TimeBaseStructure.TIM_Prescaler = 85; // frekans periyot aral1klar1 zamanlamay1 uzat1r
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_Period = 100;  // 0 ile 100 aras1nda deger yüklerim  ve 100 den sonras1 zero geçisinden sonraki pals giri_inin beklemesidir.
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;

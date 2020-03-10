@@ -17,10 +17,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l1xx.h"  
-
-#define bool _Bool
-#define FALSE 0
-#define TRUE !FALSE
+#include <stdbool.h>
 
 /* MACROs for SET, RESET or TOGGLE Output port */
 
