@@ -97,7 +97,7 @@
 #define Encoder_Timer       	TIM3
 #define Encoder_Timer_Clk     RCC_APB1Periph_TIM3
 #define Encoder_GPIO_AF       GPIO_AF_TIM3
-#define Encoder_Value	       	TIM3->CNT
+#define Encoder_Timer_Value  	TIM3->CNT
 
 #define Dimmer_Timer       		  TIM5
 #define Dimmer_Timer_Clk     	  RCC_APB1Periph_TIM5
