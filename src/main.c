@@ -379,7 +379,7 @@ static void vTask_RTC(void *pvParameters)
                 xSemaphoreGive(xMeasureSemaphore);
                 break;
             case 3603:
-								RTC_Second=3;
+                RTC_Second = 3;
                 RTC_Saat++;
                 if(RTC_Saat >= 24)
                 {
@@ -439,18 +439,18 @@ static void vTask_RTC(void *pvParameters)
                     }
                     xSemaphoreGive(xMeasureSemaphore);
                 }
-								if(Setting_Mode == true && (xTimerIsTimerActive(BL_Timer)==NULL))
-								{
-										Setting_Mode = false;
-										xSemaphoreTake(xMutex_Display, portMAX_DELAY);
-										Lcd_Str(Alt1, 9, "AYAR");
-										sprintf(Display_Buffer, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
-										Lcd_Str(Alt2, 9, Display_Buffer);									
-										xSemaphoreGive(xMutex_Display);
-										taskENTER_CRITICAL();
-										Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
-										taskEXIT_CRITICAL();
-								}
+                if(Setting_Mode == true && (xTimerIsTimerActive(BL_Timer) == NULL))
+                {
+                    Setting_Mode = false;
+                    xSemaphoreTake(xMutex_Display, portMAX_DELAY);
+                    Lcd_Str(Alt1, 9, "AYAR");
+                    sprintf(Display_Buffer, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
+                    Lcd_Str(Alt2, 9, Display_Buffer);
+                    xSemaphoreGive(xMutex_Display);
+                    taskENTER_CRITICAL();
+                    Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
+                    taskEXIT_CRITICAL();
+                }
                 break;
         }
     }

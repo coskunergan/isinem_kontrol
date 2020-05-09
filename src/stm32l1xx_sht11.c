@@ -42,6 +42,7 @@
 #define SHT11_Delay_1  __NOP();
 #define SHT11_Delay_2  __NOP();__NOP();
 /*************** Constants ***************/
+#define POLYNOMIAL  0x131;  //P(x)=x^8+x^5+x^4+1 = 100110001
 const float C1 = -2.0468; // 12bit temp , 8 bit RH sabitleri
 const float C2 = +0.0367;
 const float C3 = -0.0000015955;
@@ -150,11 +151,45 @@ uint8_t SHT11_Oku8Bit(void)
 
     return x;
 }
+/*****************************************************************************/
+uint8_t rev8bits(uint8_t v)
+{
+    uint8_t r = v;
+    uint8_t s = 7;
+
+    for(v >>= 1; v; v >>= 1)
+    {
+        r <<= 1;
+        r |= v & 1;
+        s--;
+    }
+    r <<= s;		    /* Shift when v's highest bits are zero */
+    return r;
+}
+/******************************************************************************/
+uint8_t crc8_add(uint8_t acc, uint8_t byte)
+{
+    uint8_t i;
+    acc ^= byte;
+    for(i = 0; i < 8; i++)
+    {
+        if(acc & 0x80)
+        {
+            acc = (acc << 1) ^ 0x31;
+        }
+        else
+        {
+            acc <<= 1;
+        }
+    }
+    return acc & 0xff;
+}
 /******************************************************************************/
 uint8_t SHT11_Paket_Al(uint8_t secim, float *ham)
 {
-    uint16_t temp;
+    uint8_t data[2];
     uint32_t Timeout = 20000; // 1 mhz için 480ms
+    uint8_t crc, rcrc;
 
     SHT11_Reset();
     SHT11_Start();
@@ -177,13 +212,22 @@ uint8_t SHT11_Paket_Al(uint8_t secim, float *ham)
     }
     while(Sda);
 
-    temp = SHT11_Oku8Bit();
+    data[0] = SHT11_Oku8Bit();
     SHT11_NAck();
-    temp <<= 8;
-    temp |= SHT11_Oku8Bit();
+    data[1] = SHT11_Oku8Bit();
+    SHT11_NAck();
+    rcrc = SHT11_Oku8Bit();
     SHT11_Ack();
-    *ham = temp;
 
+    crc = crc8_add(0x0, secim);
+    crc = crc8_add(crc, data[0]);
+    crc = crc8_add(crc, data[1]);
+
+    if(crc != rev8bits(rcrc))
+    {
+        return 1;
+    }
+    *ham = ((uint16_t)data[0] << 8) | data[1];
     return 0;
 }
 /******************************************************************************/
