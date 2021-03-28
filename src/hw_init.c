@@ -243,25 +243,25 @@ void HW_Setup(void)
     EXTI_ClearITPendingBit(Zero_Detect_ExtiLine);
 /////////////////////////// BUTON EVENT INTERRUPT ////////////////////
     NVIC_InitStructure.NVIC_IRQChannel = ButonB_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 15;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 //////////////////// ENCODER POT EVENT INTERRUPT /////////////////////
     NVIC_InitStructure.NVIC_IRQChannel = EncoderInt_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 15;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 ///////////////////  ZERO CROSS DETECT INTERRUPT //////////////(//////
     NVIC_InitStructure.NVIC_IRQChannel = Zero_Detect_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority =0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 ///////////////////// INIT Wkup INTERRUPT  ///////////////////////////
     NVIC_InitStructure.NVIC_IRQChannel = RTC_WKUP_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 15;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
@@ -281,22 +281,30 @@ void HW_Setup(void)
     TIM_EncoderInterfaceConfig(Encoder_Timer, TIM_EncoderMode_TI2,  TIM_ICPolarity_Falling, TIM_ICPolarity_Falling);
 //////////////////////// DIMMER TIMER INIT //////////////////////////
     RCC_APB1PeriphClockCmd(Dimmer_Timer_Clk, ENABLE);
+		RCC_APB1PeriphClockCmd(Period_Timer_Clk, ENABLE);
 
-    TIM_TimeBaseStructure.TIM_Prescaler = 85; // frekans periyot aral1klar1 zamanlamay1 uzat1r
+    TIM_TimeBaseStructure.TIM_Prescaler = 0; // frekans periyot aral1klar1 zamanlamay1 uzat1r
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_Period = 100;  // 0 ile 100 aras1nda deger yüklerim  ve 100 den sonras1 zero geçisinden sonraki pals giri_inin beklemesidir.
+    TIM_TimeBaseStructure.TIM_Period = 65535;  // 0 ile 100 aras1nda deger yüklerim  ve 100 den sonras1 zero geçisinden sonraki pals giri_inin beklemesidir.
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(Dimmer_Timer, &TIM_TimeBaseStructure);
+    TIM_TimeBaseInit(Dimmer_Timer, &TIM_TimeBaseStructure);		
     TIM_ARRPreloadConfig(Dimmer_Timer, ENABLE);
+		
+    TIM_TimeBaseStructure.TIM_Prescaler = 0; 
+    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    TIM_TimeBaseStructure.TIM_Period = 65535;  
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;		
+		TIM_TimeBaseInit(Period_Timer, &TIM_TimeBaseStructure);
 
     NVIC_InitStructure.NVIC_IRQChannel = Dimmer_Timer_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 4;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 4;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
     TIM_ITConfig(Dimmer_Timer, TIM_IT_Update, ENABLE);
     TIM_Cmd(Dimmer_Timer, DISABLE);
+		TIM_Cmd(Period_Timer, ENABLE);		
 }
 /*************************************************************************************/
 

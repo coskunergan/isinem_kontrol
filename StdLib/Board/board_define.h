@@ -102,9 +102,14 @@
 #define Dimmer_Timer       		  TIM5
 #define Dimmer_Timer_Clk     	  RCC_APB1Periph_TIM5
 #define Dimmer_Value	       	  TIM5->CNT
+#define Dimmer_PreValue     	  TIM5->PSC
+
 #define Dimmer_Timer_IRQn       TIM5_IRQn
 #define Dimmer_Timer_IRQHandler TIM5_IRQHandler
-#define Dimmer_Value  					TIM5->CNT
+
+#define Period_Timer       		  TIM6
+#define Period_Timer_Clk     	  RCC_APB1Periph_TIM6
+#define Period_Value	       	  TIM6->CNT
 ////////////////////////////////////////////////////
 //																								//
 //					 LCD ST7522 Tanimlamalari							//

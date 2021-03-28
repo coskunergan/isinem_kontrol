@@ -65,48 +65,61 @@ void Dimmer_Timer_IRQHandler(void)  // dimmer timer overflow int
 {
     TIM_ClearITPendingBit(Dimmer_Timer, TIM_IT_Update);
     TIM_Cmd(Dimmer_Timer, DISABLE);
-    Gpio_High(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP();
-    __NOP(); // Pulse MOC2030 20us
-    Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
+		Gpio_High(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP();
+		__NOP(); // Pulse MOC2030 20us
+		Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
 }
 /******************************************************************************/
 void Zero_Cross_IRQHandler(void) // zero cross detect interrupt
 {
+	  static uint32_t Period = 0;
+	
     EXTI_ClearITPendingBit(Zero_Detect_ExtiLine);
-    Dimmer_Value = Dimmer;
-    if(Dimmer != 0)// s1f1r ise tamamen kapat
-    {
-        TIM_Cmd(Dimmer_Timer, ENABLE);
-    }
+	
+		Period = Period_Value;
+		Period_Value=0;
+		
+		//--------------------	
     if(Dimmer == 99)// full ise tamamen ac
     {
         Gpio_High(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
     }
+    else if(Dimmer == 0)
+    {
+        Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
+    }		
+		else
+		{
+				Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
+				Dimmer_Value = (65535 - Period) + ((Period / 99 ) * (Dimmer));
+				TIM_Cmd(Dimmer_Timer, ENABLE);
+		}
+		//--------------------	
 }
 /******************************************************************************/
 void HardFault_Handler_C(unsigned long *hardfault_args)

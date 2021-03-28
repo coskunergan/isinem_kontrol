@@ -102,7 +102,7 @@ int main(void)
     IWDG_SetPrescaler(IWDG_Prescaler_256);
     IWDG_SetReload(0x0250); // 6sn sonra yeniden yüklenmezse wdt reset atacak
     IWDG_ReloadCounter();
-    IWDG_Enable();
+    //IWDG_Enable();
 
     if(RCC_GetFlagStatus(RCC_FLAG_IWDGRST) != RESET)
     {
@@ -131,7 +131,7 @@ int main(void)
     xTaskCreate(vTask_Buzzer, "Buzzer", 256, NULL, 15, NULL);
     xTaskCreate(vTask_RTC, "RTC", 256, NULL, 6, NULL);
 
-    Int_Eeprom_ReadStr(0, (uint8_t *)Display_Buffer, 2); // Eeprom Hafizadan AYAR degerini okunur
+    Int_Eeprom_ReadStr(10, (uint8_t *)Display_Buffer, 2); // Eeprom Hafizadan AYAR degerini okunur
     Encoder_Value = Display_Buffer[0];
     Encoder_Value |= Display_Buffer[1] << 8;
 
@@ -252,7 +252,10 @@ static void vTask_Sensor(void *pvParameters)
         else
         {
             xSemaphoreTake(xMutex_Display, portMAX_DELAY);
-            Dimmer = 50;
+						if(Dimmer)
+						{
+							Dimmer--;
+						}
             Lcd_Str(Alt1, 4, "XX.X"); // sensor yok
             Lcd_Str(Alt2, 6, "XX");
             xSemaphoreGive(xMutex_Display);
@@ -322,7 +325,7 @@ static void vTask_Buton(void *pvParameters)
             sprintf(Display_Buffer, "%02d.%d", Encoder_Value / 10, Encoder_Value % 10);
             Lcd_Str(Alt2, 9, Display_Buffer);
             taskENTER_CRITICAL();
-            Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
+            Int_Eeprom_WriteStr(10, (uint8_t *)&Encoder_Value, 2);
             taskEXIT_CRITICAL();
         }
 
@@ -361,7 +364,7 @@ static void vTask_RTC(void *pvParameters)
                 Backlight_Active();
                 xSemaphoreTake(xMutex_Display, portMAX_DELAY);
                 Lcd_Underline_Str(Alt1, 0, "COSKUN ERGAN");
-                Lcd_Invert_Str(Alt2, 0,    "ISI-NEM V1.4");
+                Lcd_Invert_Str(Alt2, 0,    "ISI-NEM V1.5");
                 sprintf(Display_Buffer, "::%0.2d%0.2d", RTC_Gun, RTC_Saat);
                 Display_String_Yaz(Display_Buffer);
                 xSemaphoreGive(xMutex_Display);
@@ -448,7 +451,7 @@ static void vTask_RTC(void *pvParameters)
                     Lcd_Str(Alt2, 9, Display_Buffer);
                     xSemaphoreGive(xMutex_Display);
                     taskENTER_CRITICAL();
-                    Int_Eeprom_WriteStr(0, (uint8_t *)&Encoder_Value, 2);
+                    Int_Eeprom_WriteStr(10, (uint8_t *)&Encoder_Value, 2);
                     taskEXIT_CRITICAL();
                 }
                 break;
