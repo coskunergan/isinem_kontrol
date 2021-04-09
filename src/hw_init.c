@@ -125,7 +125,7 @@ void HW_Setup(void)
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     /* Disable GPIOs clock */
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOE | RCC_AHBPeriph_GPIOF | RCC_AHBPeriph_GPIOH | RCC_AHBPeriph_GPIOG , DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOE | RCC_AHBPeriph_GPIOF | RCC_AHBPeriph_GPIOH | RCC_AHBPeriph_GPIOG, DISABLE);
 
     ////////////////////// Out Pins //////////////////////////////
     GPIO_InitStructure.GPIO_Pin = Moc2030_Pulse_Pin;    // MOC2030 PULSE
@@ -256,7 +256,7 @@ void HW_Setup(void)
 ///////////////////  ZERO CROSS DETECT INTERRUPT //////////////(//////
     NVIC_InitStructure.NVIC_IRQChannel = Zero_Detect_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority =0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 ///////////////////// INIT Wkup INTERRUPT  ///////////////////////////
@@ -281,20 +281,20 @@ void HW_Setup(void)
     TIM_EncoderInterfaceConfig(Encoder_Timer, TIM_EncoderMode_TI2,  TIM_ICPolarity_Falling, TIM_ICPolarity_Falling);
 //////////////////////// DIMMER TIMER INIT //////////////////////////
     RCC_APB1PeriphClockCmd(Dimmer_Timer_Clk, ENABLE);
-		RCC_APB1PeriphClockCmd(Period_Timer_Clk, ENABLE);
+    RCC_APB1PeriphClockCmd(Period_Timer_Clk, ENABLE);
 
     TIM_TimeBaseStructure.TIM_Prescaler = 0; // frekans periyot aral1klar1 zamanlamay1 uzat1r
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_Period = 65535;  // 0 ile 100 aras1nda deger yüklerim  ve 100 den sonras1 zero geçisinden sonraki pals giri_inin beklemesidir.
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(Dimmer_Timer, &TIM_TimeBaseStructure);		
+    TIM_TimeBaseInit(Dimmer_Timer, &TIM_TimeBaseStructure);
     TIM_ARRPreloadConfig(Dimmer_Timer, ENABLE);
-		
-    TIM_TimeBaseStructure.TIM_Prescaler = 0; 
+
+    TIM_TimeBaseStructure.TIM_Prescaler = 0;
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_Period = 65535;  
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;		
-		TIM_TimeBaseInit(Period_Timer, &TIM_TimeBaseStructure);
+    TIM_TimeBaseStructure.TIM_Period = 65535;
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseInit(Period_Timer, &TIM_TimeBaseStructure);
 
     NVIC_InitStructure.NVIC_IRQChannel = Dimmer_Timer_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
@@ -304,7 +304,7 @@ void HW_Setup(void)
 
     TIM_ITConfig(Dimmer_Timer, TIM_IT_Update, ENABLE);
     TIM_Cmd(Dimmer_Timer, DISABLE);
-		TIM_Cmd(Period_Timer, ENABLE);		
+    TIM_Cmd(Period_Timer, ENABLE);
 }
 /*************************************************************************************/
 

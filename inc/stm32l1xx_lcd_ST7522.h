@@ -4,26 +4,26 @@
   * @author  Coskun ERGAN
   * @version V1.0.3
   * @date    12-Ekim-2012
-  * @brief   ST7522 Çipsetli Glcd Kütüpanesi 
+  * @brief   ST7522 Çipsetli Glcd Kütüpanesi
   *
 	*  @verbatim
   ******************************************************************************
 	*   Notlar;
 	*
-	*		- Bu kütüpane Delay Fonksiyonunu kullanir Systick ile "DelayMs(100);" 
+	*		- Bu kütüpane Delay Fonksiyonunu kullanir Systick ile "DelayMs(100);"
 	*			karsiligi 100Ms ye kurulmalidir.
 	*		- GPIO tan1mlamalarini kendisi yapar portlara clock verir.(ULP için dikkate aliniz).
-	*		- Bu kütüpanede RST ve CS1 pinleri kullanilmaz. 
+	*		- Bu kütüpanede RST ve CS1 pinleri kullanilmaz.
 	*				RST: Glcd kari üzerinde pull-up ve kapasite ile turn on devre olusturup çalisir.
 	*						 reset pini kartda bos birakilacaktir.
 	*		    CS1: bu pin çip seçimini yapar tek çip oldugu icin sürekli "0" da tutulmalidir.
 	*				     Kart üzerinden pin GND'ye Baglanmalidir.
 	*
-	*					
+	*
 	******************************************************************************
 	*
 	*    Kullanmadan önce sirasiyla;
-	*		
+	*
 	*				Lcd_Pin_Init();  // lcd için gerekli pin,port,clk tanimlamalarini yapar.
 	*				Init_Lcd();      // lcd kurulumunu yapar eger sonrasinda Lcd_Str fonksiyonu kullanilacak ise
 	*														bu fonksiyon atlanabilir Lcd_Str icerisinde de init_lcd mevcuttur.
@@ -36,8 +36,8 @@
 	******************************************************************************
 	*@endverbatim
 	*****************************************************************************/
-	
-/* Includes ------------------------------------------------------------------*/	
+
+/* Includes ------------------------------------------------------------------*/
 #include "stm32l1xx.h"
 #include "board_define.h"
 
@@ -45,8 +45,8 @@
 #define __STM32L1xx_LCD_ST7522_H
 
 #ifdef __cplusplus
- extern "C" {
-#endif 
+extern "C" {
+#endif
 
 /** @addtogroup Selenoid valf Ac Kapat kütüpanesi
   * @{
@@ -62,7 +62,7 @@
 #define duz       0
 #define ters      1
 #define  Lcd_BL_Off  GPIO_SetBits(Lcd_BL_Port,Lcd_BL_Pin);
-#define  Lcd_BL_On   GPIO_ResetBits(Lcd_BL_Port,Lcd_BL_Pin);	 
+#define  Lcd_BL_On   GPIO_ResetBits(Lcd_BL_Port,Lcd_BL_Pin);
 
 // Ekranýn Page ve segment adresleri
 #define Alt_Ekran_1Satir      0xB0                 // Lcd nin alttaki ekranýn 1. satirina ve ustteki ekrana yazmak için page adres
@@ -102,21 +102,21 @@ void Lcd_Kontrast_Yenile(void);
 void Lcd_Init(void);
 void Lcd_Pin_Init(void);
 void Komut_Gon(uint8_t komut);
-void Veri_Gon(uint8_t ekran,uint8_t veri);
-void Ikon_Durum(uint8_t ikon_segment,uint8_t durum);
-void Display_Ikon_Durum(uint8_t ikon_segment,uint8_t durum);
-void Lcd_Clear(uint8_t commons,uint8_t segments,uint8_t segments_sinir);
-void Lcd_Center_Str(uint8_t common,const char *text);
-void Lcd_Str(uint8_t common, uint8_t start_Adr, const char *text );
-void Lcd_Invert_Str(uint8_t common, uint8_t start_Adr, const char *text );
-void Lcd_Underline_Str(uint8_t common, uint8_t start_Adr, const char *text );
+void Veri_Gon(uint8_t ekran, uint8_t veri);
+void Ikon_Durum(uint8_t ikon_segment, uint8_t durum);
+void Display_Ikon_Durum(uint8_t ikon_segment, uint8_t durum);
+void Lcd_Clear(uint8_t commons, uint8_t segments, uint8_t segments_sinir);
+void Lcd_Center_Str(uint8_t common, const char *text);
+void Lcd_Str(uint8_t common, uint8_t start_Adr, const char *text);
+void Lcd_Invert_Str(uint8_t common, uint8_t start_Adr, const char *text);
+void Lcd_Underline_Str(uint8_t common, uint8_t start_Adr, const char *text);
 void Lcd_Antenna(uint8_t size);
-void Display_Yaz(uint8_t rakam,uint8_t display);
+void Display_Yaz(uint8_t rakam, uint8_t display);
 void Display_String_Yaz(char *ptr);
 void Lcd_Contrast(uint8_t value);
 
 #ifdef __cplusplus
 }
 #endif
-  
+
 #endif /* __STM32L1xx_LCD_ST7522_H*/

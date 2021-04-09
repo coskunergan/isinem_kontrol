@@ -4,7 +4,7 @@
   * @author  Coskun ERGAN
   * @version V1.0.0
   * @date    25-Agustos-2014
-  * @brief   SHT11 Isi Nem Sensöru kütüpanesi 
+  * @brief   SHT11 Isi Nem Sensöru kütüpanesi
   *
 	*  @verbatim
 ********************************************************************************/
@@ -14,13 +14,13 @@
 #define __STM32L1xx_SHT11_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l1xx.h"
 #include "board_define.h"
-	
+
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
@@ -28,7 +28,7 @@
 #define enableInterrupts()   __set_PRIMASK(0);
 #define disableInterrupts()  __set_PRIMASK(1);
 
-uint8_t SHT11_Oku(float *isi, float *nem); 
+uint8_t SHT11_Oku(float *isi, float *nem);
 uint8_t SHT11_Yaz_Config(uint8_t status);
 
 
@@ -40,7 +40,7 @@ uint8_t SHT11_Yaz_Config(uint8_t status);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

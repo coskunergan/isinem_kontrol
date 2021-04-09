@@ -23,11 +23,11 @@
 /**************** Timing *****************/
 #define DHT11_Delay_1uS  		__NOP();
 #define DHT11_Delay_10uS 		__NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
-#define DHT11_Delay_20uS	 	DHT11_Delay_10uS; DHT11_Delay_10uS; DHT11_Delay_10uS;										 
-#define DHT11_Delay_40uS	 	DHT11_Delay_20uS; DHT11_Delay_20uS;	DHT11_Delay_10uS;	
-#define DHT11_Delay_80uS	 	DHT11_Delay_40uS; DHT11_Delay_40uS;	
+#define DHT11_Delay_20uS	 	DHT11_Delay_10uS; DHT11_Delay_10uS; DHT11_Delay_10uS;
+#define DHT11_Delay_40uS	 	DHT11_Delay_20uS; DHT11_Delay_20uS;	DHT11_Delay_10uS;
+#define DHT11_Delay_80uS	 	DHT11_Delay_40uS; DHT11_Delay_40uS;
 #define DHT11_Delay_100uS   DHT11_Delay_80uS;DHT11_Delay_20uS;
-/*************** Constants ***************/ 
+/*************** Constants ***************/
 
 /* GPIO port name and number for 1-wire data input/output */
 #define Dht_Pin_Port      GPIOC

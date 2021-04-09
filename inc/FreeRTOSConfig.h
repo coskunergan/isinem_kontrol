@@ -81,18 +81,18 @@
 /* Ensure stdint and C code is only used by the compiler, and not the
 assembler. */
 #ifdef __ICCARM__
-	#include <stdint.h>
-	extern uint32_t SystemCoreClock;
-	void vMainPostStopProcessing( void );
-	void vAssertCalled( unsigned long ulLine, const char * const pcFileName );
+#include <stdint.h>
+extern uint32_t SystemCoreClock;
+void vMainPostStopProcessing(void);
+void vAssertCalled(unsigned long ulLine, const char *const pcFileName);
 #endif
 
 #if  RVDS_ARMCM3_LM3S102
-	#include <stdint.h>
-	extern uint32_t SystemCoreClock;
-	void vMainPostStopProcessing( void );
-	void vAssertCalled( unsigned long ulLine, const char * const pcFileName );
-#endif        
+#include <stdint.h>
+extern uint32_t SystemCoreClock;
+void vMainPostStopProcessing(void);
+void vAssertCalled(unsigned long ulLine, const char *const pcFileName);
+#endif
 
 /* Set configCREATE_LOW_POWER to one to run the simple blinky low power
 demo, or 0 to run the more comprehensive test and demo application. */
@@ -112,17 +112,17 @@ main_low_power.c and in STM32L_low_power_tick_management.c. */
 
 /* A few settings are dependent on the configCREATE_LOW_POWER setting. */
 #if configUSE_TICKLESS_IDLE == 1
-	#define configTICK_RATE_HZ						( 100 )
-	#define configEXPECTED_IDLE_TIME_BEFORE_SLEEP 	( 20 + 1 ) /* ( ( 200 / portTICK_PERIOD_MS ) + 1 ) written out pre-processed to enable #error statements to check its value. */
-	#define configUSE_TIMERS						1
+#define configTICK_RATE_HZ						( 100 )
+#define configEXPECTED_IDLE_TIME_BEFORE_SLEEP 	( 20 + 1 ) /* ( ( 200 / portTICK_PERIOD_MS ) + 1 ) written out pre-processed to enable #error statements to check its value. */
+#define configUSE_TIMERS						1
 #else
-	#define configSYSTICK_CLOCK_HZ					( SystemCoreClock >> 3UL ) /* Systick clock is one eighth the system clock. */
-	#define configTICK_RATE_HZ						( ( TickType_t ) 100 )
-	#define configUSE_TIMERS						1
+#define configSYSTICK_CLOCK_HZ					( SystemCoreClock >> 3UL ) /* Systick clock is one eighth the system clock. */
+#define configTICK_RATE_HZ						( ( TickType_t ) 100 )
+#define configUSE_TIMERS						1
 #endif /* configCREATE_LOW_POWER_DEMO */
 
 #define configPRE_STOP_PROCESSING()
-#define configPOST_STOP_PROCESSING()	
+#define configPOST_STOP_PROCESSING()
 
 /* The configUSE_TICKLESS_IDLE setting is dependent on the users setting of
 configCREATE_LOW_POWER_DEMO at the top of this file. */
@@ -172,9 +172,9 @@ to exclude the API function. */
 
 /* Use the system definition, if there is one */
 #ifdef __NVIC_PRIO_BITS
-	#define configPRIO_BITS       __NVIC_PRIO_BITS
+#define configPRIO_BITS       __NVIC_PRIO_BITS
 #else
-	#define configPRIO_BITS       4        /* 15 priority levels */
+#define configPRIO_BITS       4        /* 15 priority levels */
 #endif
 
 #define configLIBRARY_LOWEST_INTERRUPT_PRIORITY			15

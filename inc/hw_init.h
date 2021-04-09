@@ -17,7 +17,7 @@
 
 #include "stm32l1xx.h"
 #include "board_define.h"
-#include "FreeRTOSConfig.h" 
+#include "FreeRTOSConfig.h"
 
 void HW_Setup(void);
 

@@ -125,7 +125,7 @@ void Lcd_Lp_Off(void)
 void The_Pin_Init(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin, uint16_t GPIO_clk)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
-    RCC_AHBPeriphClockCmd(GPIO_clk , ENABLE);
+    RCC_AHBPeriphClockCmd(GPIO_clk, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -157,19 +157,19 @@ void Lcd_Pin_Init(void)
 void Komut_Gon(uint8_t komut)
 {
     uint8_t i, bit = 0x80;
-    GPIO_ResetBits(Lcd_A0_Port , Lcd_A0_Pin);     // A0   --> 0
+    GPIO_ResetBits(Lcd_A0_Port, Lcd_A0_Pin);      // A0   --> 0
     for(i = 0; i < 8; i++)
     {
-        GPIO_ResetBits(Lcd_Si_Port , Lcd_Scl_Pin);    // Scl  --> 0
+        GPIO_ResetBits(Lcd_Si_Port, Lcd_Scl_Pin);     // Scl  --> 0
         if((komut & bit) == bit)
         {
-            GPIO_SetBits(Lcd_Si_Port , Lcd_Si_Pin);    // SI   --> 1
+            GPIO_SetBits(Lcd_Si_Port, Lcd_Si_Pin);     // SI   --> 1
         }
         else
         {
-            GPIO_ResetBits(Lcd_Scl_Port , Lcd_Si_Pin);    // SI   --> 0
+            GPIO_ResetBits(Lcd_Scl_Port, Lcd_Si_Pin);     // SI   --> 0
         }
-        GPIO_SetBits(Lcd_Scl_Port , Lcd_Scl_Pin);     // SCL  --> 1
+        GPIO_SetBits(Lcd_Scl_Port, Lcd_Scl_Pin);      // SCL  --> 1
         bit >>= 1;
     }
 }
@@ -192,19 +192,19 @@ void Veri_Gon(uint8_t ekran, uint8_t veri) // ekran altaki buyuk ekranamý yoksa 
     {
         bit = 0x01;    // ekran = 1 ise veriyi LSB--> MSB ye dogru gönder
     }
-    GPIO_SetBits(Lcd_A0_Port , Lcd_A0_Pin);     // A0   --> 1
+    GPIO_SetBits(Lcd_A0_Port, Lcd_A0_Pin);      // A0   --> 1
     for(i = 0; i < 8; i++)
     {
-        GPIO_ResetBits(Lcd_Si_Port , Lcd_Scl_Pin);    // Scl  --> 0
+        GPIO_ResetBits(Lcd_Si_Port, Lcd_Scl_Pin);     // Scl  --> 0
         if((veri & bit) == bit)
         {
-            GPIO_SetBits(Lcd_Si_Port , Lcd_Si_Pin);    // SI   --> 1
+            GPIO_SetBits(Lcd_Si_Port, Lcd_Si_Pin);     // SI   --> 1
         }
         else
         {
-            GPIO_ResetBits(Lcd_Scl_Port , Lcd_Si_Pin);    // SI   --> 0
+            GPIO_ResetBits(Lcd_Scl_Port, Lcd_Si_Pin);     // SI   --> 0
         }
-        GPIO_SetBits(Lcd_Scl_Port , Lcd_Scl_Pin);     // SCL  --> 1
+        GPIO_SetBits(Lcd_Scl_Port, Lcd_Scl_Pin);      // SCL  --> 1
         if(ekran == 1)
         {
             bit <<= 1;

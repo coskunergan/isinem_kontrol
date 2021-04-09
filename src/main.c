@@ -102,7 +102,7 @@ int main(void)
     IWDG_SetPrescaler(IWDG_Prescaler_256);
     IWDG_SetReload(0x0250); // 6sn sonra yeniden yüklenmezse wdt reset atacak
     IWDG_ReloadCounter();
-    //IWDG_Enable();
+    IWDG_Enable();
 
     if(RCC_GetFlagStatus(RCC_FLAG_IWDGRST) != RESET)
     {
@@ -125,7 +125,7 @@ int main(void)
     BL_Timer = xTimerCreate("BL Timer", Ms(5000), pdTRUE, NULL, vBL_Timer);   // backlight timer
 
     /* Start the two tasks as described at the top of this file. */
-    xTaskCreate(vTask_Sensor ,  "Task Sensor" , 512, NULL, 9, NULL);
+    xTaskCreate(vTask_Sensor,  "Task Sensor", 512, NULL, 9, NULL);
     xTaskCreate(vTask_Encoder,  "Taks Encoder", 512, NULL, 5, NULL);
     xTaskCreate(vTask_Buton, "Taks Buton", 512, NULL, 5, NULL);
     xTaskCreate(vTask_Buzzer, "Buzzer", 256, NULL, 15, NULL);
@@ -196,7 +196,6 @@ static void vTask_Sensor(void *pvParameters)
                     Dimmer = 99;
                 }
             }
-
             xSemaphoreTake(xMutex_Display, portMAX_DELAY);
             sprintf(Display_Buffer, "%02.1f", Temperature);
             Lcd_Str(Alt1, 4, Display_Buffer);
@@ -232,7 +231,14 @@ static void vTask_Sensor(void *pvParameters)
                 I += (float)(Set - Temperature); // hata payi
                 Set_Float_Backup(I_BACKUP_ADR, &I);
                 Set = (float)((Set + BANDRANGE) - Temperature + (I * COEFFICIENT));
-                Dimmer = (uint8_t)(Set * 100);
+                if(Set < 0)
+                {
+                    Dimmer = 0;
+                }
+                else
+                {
+                    Dimmer = (uint8_t)(Set * 100);
+                }
                 //---------- Result -------------
                 if(Dimmer > 99)
                 {
@@ -252,10 +258,10 @@ static void vTask_Sensor(void *pvParameters)
         else
         {
             xSemaphoreTake(xMutex_Display, portMAX_DELAY);
-						if(Dimmer)
-						{
-							Dimmer--;
-						}
+            if(Dimmer)
+            {
+                Dimmer--;
+            }
             Lcd_Str(Alt1, 4, "XX.X"); // sensor yok
             Lcd_Str(Alt2, 6, "XX");
             xSemaphoreGive(xMutex_Display);
