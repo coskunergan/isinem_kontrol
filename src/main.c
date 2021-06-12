@@ -206,55 +206,55 @@ static void vTask_Sensor(void *pvParameters)
             xSemaphoreGive(xMutex_Display);
             IWDG_ReloadCounter();
         }
-        else if(!DHT11_Oku(&Temperature, &Humidity))
-        {
-            if((Temperature > 99) || (Temperature < (-10)) || (Humidity > 99)) // hatali ölçüm var
-            {
-                continue;// yanlis isi alindi checksum yanlis olma ihtimali var
-            }
+//        else if(!DHT11_Oku(&Temperature, &Humidity))
+//        {
+//            if((Temperature > 99) || (Temperature < (-10)) || (Humidity > 99)) // hatali ölçüm var
+//            {
+//                continue;// yanlis isi alindi checksum yanlis olma ihtimali var
+//            }
 
-            Set = (float)(Encoder_Value * 0.1);
+//            Set = (float)(Encoder_Value * 0.1);
 
-            if(Set <= Temperature - BANDRANGE)
-            {
-                Dimmer = 0;
-                I = 0;
-            }
-            else if(Set >= Temperature + BANDRANGE)
-            {
-                Dimmer = 99;
-                I = 0;
-            }
-            else
-            {
-                //--------- PI calculate ---------
-                I += (float)(Set - Temperature); // hata payi
-                Set_Float_Backup(I_BACKUP_ADR, &I);
-                Set = (float)((Set + BANDRANGE) - Temperature + (I * COEFFICIENT));
-                if(Set < 0)
-                {
-                    Dimmer = 0;
-                }
-                else
-                {
-                    Dimmer = (uint8_t)(Set * 100);
-                }
-                //---------- Result -------------
-                if(Dimmer > 99)
-                {
-                    Dimmer = 99;
-                }
-            }
-            xSemaphoreTake(xMutex_Display, portMAX_DELAY);
-            sprintf(Display_Buffer, "%02.1f", Temperature);
-            Lcd_Str(Alt1, 4, Display_Buffer);
-            sprintf(Display_Buffer, "%2.0f", Humidity);
-            Lcd_Str(Alt2, 6, Display_Buffer);
-            sprintf(Display_Buffer, "%02d", Dimmer);
-            Lcd_Str(Ust, 0, Display_Buffer);
-            xSemaphoreGive(xMutex_Display);
-            IWDG_ReloadCounter();
-        }
+//            if(Set <= Temperature - BANDRANGE)
+//            {
+//                Dimmer = 0;
+//                I = 0;
+//            }
+//            else if(Set >= Temperature + BANDRANGE)
+//            {
+//                Dimmer = 99;
+//                I = 0;
+//            }
+//            else
+//            {
+//                //--------- PI calculate ---------
+//                I += (float)(Set - Temperature); // hata payi
+//                Set_Float_Backup(I_BACKUP_ADR, &I);
+//                Set = (float)((Set + BANDRANGE) - Temperature + (I * COEFFICIENT));
+//                if(Set < 0)
+//                {
+//                    Dimmer = 0;
+//                }
+//                else
+//                {
+//                    Dimmer = (uint8_t)(Set * 100);
+//                }
+//                //---------- Result -------------
+//                if(Dimmer > 99)
+//                {
+//                    Dimmer = 99;
+//                }
+//            }
+//            xSemaphoreTake(xMutex_Display, portMAX_DELAY);
+//            sprintf(Display_Buffer, "%02.1f", Temperature);
+//            Lcd_Str(Alt1, 4, Display_Buffer);
+//            sprintf(Display_Buffer, "%2.0f", Humidity);
+//            Lcd_Str(Alt2, 6, Display_Buffer);
+//            sprintf(Display_Buffer, "%02d", Dimmer);
+//            Lcd_Str(Ust, 0, Display_Buffer);
+//            xSemaphoreGive(xMutex_Display);
+//            IWDG_ReloadCounter();
+//        }
         else
         {
             xSemaphoreTake(xMutex_Display, portMAX_DELAY);

@@ -91,6 +91,16 @@ void Dimmer_Timer_IRQHandler(void)  // dimmer timer overflow int
     __NOP();
     __NOP();
     __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
     __NOP(); // Pulse MOC2030 20us
     Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
 }
@@ -98,25 +108,50 @@ void Dimmer_Timer_IRQHandler(void)  // dimmer timer overflow int
 void Zero_Cross_IRQHandler(void) // zero cross detect interrupt
 {
     static uint32_t Period = 0;
+    static uint32_t Period_Avr = 0;
+    static uint8_t Period_Index = 0;
+    uint32_t temp;
 
     EXTI_ClearITPendingBit(Zero_Detect_ExtiLine);
-
-    Period = Period_Value;
-    Period_Value = 0;
-
+//    if(Period_Value >= 12000)
+//    {
+//				Period_Value=0;
+//        return;
+//    }		
     //--------------------
     if(Dimmer == 99)// full ise tamamen ac
     {
         Gpio_High(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
+				Period_Avr += Period_Value;
+				Period_Value = 0;
+				Period_Index++;
+
+				if(Period_Index >= 16)
+				{
+						Period_Index = 0;
+						Period = Period_Avr >> 4;
+						Period_Avr = 0;
+				}			
     }
-    else if(Dimmer == 0)
+    else if(Dimmer == 0 || Period == 0)
     {
         Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
+				Period_Avr += Period_Value;
+				Period_Value = 0;
+				Period_Index++;
+
+				if(Period_Index >= 16)
+				{
+						Period_Index = 0;
+						Period = Period_Avr >> 4;
+						Period_Avr = 0;
+				}			
     }
     else
     {
         Gpio_Low(Moc2030_Pulse_Port, Moc2030_Pulse_Pin);
-        Dimmer_Value = (65535 - Period) + ((Period / 120) * (Dimmer + 20));
+        temp = Period / 2;
+        Dimmer_Value = (65535 - temp) + ((temp / 110) * (Dimmer));
         TIM_Cmd(Dimmer_Timer, ENABLE);
     }
     //--------------------

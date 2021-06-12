@@ -16,7 +16,7 @@
         <TargetCommonOption>
           <Device>STM32L152RD</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32L1xx_DFP.1.3.0</PackID>
+          <PackID>Keil.STM32L1xx_DFP.1.2.0</PackID>
           <PackURL>http://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x0000C000) IROM(0x08000000,0x00060000) CPUTYPE("Cortex-M3") CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -134,11 +134,11 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>4100</DriverSelection>
+            <DriverSelection>4096</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
-          <Flash2>BIN\ULP2CM3.DLL</Flash2>
-          <Flash3></Flash3>
+          <Flash2>BIN\UL2CM3.DLL</Flash2>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
